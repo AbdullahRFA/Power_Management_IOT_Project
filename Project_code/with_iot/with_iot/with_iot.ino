@@ -28,29 +28,26 @@ int calibration_factor = 120; // Calibration factor for ACS712
 #define FREQUENCY 60.0         // Frequency of AC source (60 Hz or 50 Hz)
 ZMPT101B voltageSensor(ZMPT101B_PIN, FREQUENCY);
 
+// Relay setup
+#define RELAY_PIN 2            // GPIO pin connected to the relay module
+bool relayState = false;       // To store the current state of the relay
+
 // WiFi credentials
 char ssid[] = "322";
 char pass[] = "murtazafy";
 
 BlynkTimer timer;
 
-// This function is called every time the Virtual Pin 0 state changes
-BLYNK_WRITE(V0)
-{
-  // Set incoming value from pin V0 to a variable
-  int value = param.asInt();
-
-  // Update state
-  Blynk.virtualWrite(V1, value);
-}
-
-// This function is called every time the device is connected to the Blynk Cloud
-BLYNK_CONNECTED()
-{
-  // Change Web Link Button message to "Congratulations!"
-  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
-  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
-  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+// Function to control relay (connected to Virtual Pin V4)
+BLYNK_WRITE(V4) {
+  int buttonState = param.asInt(); // Read the button state from Blynk
+  if (buttonState == 1) {
+    digitalWrite(RELAY_PIN, LOW);  // Turn relay ON (LOW activates the relay)
+    relayState = true;            // Update relay state
+  } else {
+    digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF (HIGH deactivates the relay)
+    relayState = false;            // Update relay state
+  }
 }
 
 // This function sends Arduino's uptime every second to Virtual Pin 2
@@ -78,20 +75,27 @@ float readCurrent()
 
   return mA;  // Return the measured current
 }
-float readVoltage(){
+
+// Function to read voltage using ZMPT101B
+float readVoltage() {
   float average = 0.0;
 
-  for(int i=0;i<100;i++){
+  for (int i = 0; i < 100; i++) {
     average += voltageSensor.getRmsVoltage();
   }
 
   average = (average / 100.0);
   return average;
 }
+
 void setup()
 {
   // Debug console
   Serial.begin(115200);
+
+  // Configure relay pin as output
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, HIGH); // Ensure relay is OFF initially
 
   // Connect to WiFi and Blynk
   Serial.println("Connecting to WiFi...");
@@ -111,7 +115,7 @@ void setup()
   
   // Initialize ZMPT101B
   Serial.println("Initializing ZMPT101B Voltage Sensor...");
-  voltageSensor.setSensitivity(SENSITIVITY); 
+  voltageSensor.setSensitivity(SENSITIVITY);
 
   // Setup a function to be called every second
   timer.setInterval(1000L, myTimerEvent);
@@ -126,8 +130,7 @@ void loop()
   float current = readCurrent();
 
   // Read voltage using ZMPT101B
-   float rmsVoltage = readVoltage();
-  // float rmsVoltage = voltageSensor.getRmsVoltage();
+  float rmsVoltage = readVoltage();
 
   // Send data to Blynk
   Blynk.virtualWrite(V0, rmsVoltage);  // Send voltage to Virtual Pin V0
