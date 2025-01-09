@@ -79,14 +79,17 @@ unsigned long lastUpdateTime = 0;
   Serial.print(per_unit_cost);
   Serial.println(" TK");
   
+  display.setCursor(0, 30);
   display.print("Power: ");
   display.print(power);
   display.println(" W");
 
+  display.setCursor(0, 40);
   display.print("Energy: ");
   display.print(units);
   display.println(" kWh");
 
+  display.setCursor(0, 50);
   display.print("Cost: ");
   display.print(per_unit_cost);  // Display cost in TK
   display.println(" TK");
@@ -163,7 +166,7 @@ void setup()
   }
 
   display.display();  
-  delay(2000);  // Pause for 2 seconds
+  delay(500);  // Pause for .0 seconds
 
   // Connect to WiFi and Blynk
   Serial.println("Connecting to WiFi...");
@@ -219,11 +222,14 @@ void loop()
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
+  display.print("Power Management");
+
+  display.setCursor(0, 10);
   display.print("Voltage: ");
   display.print(rmsVoltage);
   display.println(" V");
 
- display.setCursor(0, 2);
+ display.setCursor(0, 20);
   display.print("Current: ");
   display.print(current);
   display.println(" mA");
