@@ -79,17 +79,17 @@ unsigned long lastUpdateTime = 0;
   Serial.print(per_unit_cost);
   Serial.println(" TK");
   
-  display.setCursor(0, 30);
+  display.setCursor(0, 35);
   display.print("Power: ");
   display.print(power);
   display.println(" W");
 
-  display.setCursor(0, 40);
+  display.setCursor(0, 45);
   display.print("Energy: ");
   display.print(units);
   display.println(" kWh");
 
-  display.setCursor(0, 50);
+  display.setCursor(0, 55);
   display.print("Cost: ");
   display.print(per_unit_cost);  // Display cost in TK
   display.println(" TK");
@@ -224,18 +224,19 @@ void loop()
   display.setCursor(0, 0);
   display.print("Power Management");
 
-  display.setCursor(0, 10);
+  display.setCursor(0, 15);
   display.print("Voltage: ");
   display.print(rmsVoltage);
   display.println(" V");
 
- display.setCursor(0, 20);
+ display.setCursor(0, 25);
   display.print("Current: ");
   display.print(current);
   display.println(" mA");
 
   // this function calculatePowerAndEnergy
   calculatePowerAndEnergy(current, rmsVoltage);
-
+  // display.setCursor(0, 60);
+  // display.print("Developed BY ANS_RFA");
   delay(1000);
 }
