@@ -16,6 +16,15 @@
 #include <BlynkSimpleEsp32.h>
 #include "ACS712.h"
 #include <ZMPT101B.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// OLED display setup (SDA = 21, SCL = 22 for ESP32)
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // ACS712 setup
 #define ACS712_PIN 34          // GPIO pin connected to ACS712
@@ -32,44 +41,25 @@ ZMPT101B voltageSensor(ZMPT101B_PIN, FREQUENCY);
 #define RELAY_PIN 2            // GPIO pin connected to the relay module
 bool relayState = false;       // To store the current state of the relay
 
-
-
 // WiFi credentials
 char ssid[] = "322";
 char pass[] = "murtazafy";
 
 BlynkTimer timer;
 
-
 // Variables for power and energy calculation
 float power = 0.0;      // Power in watts
 float energy = 0.0;     // Energy in kWh (units)
 unsigned long lastUpdateTime = 0;
 
-
 // Function to calculate power and energy
-void calculatePowerAndEnergy(float current, float voltage) {
-  // unsigned long currentTime = millis();
-  
-  // // Read voltage and current
-  // float voltage = readVoltage();  // Function to read voltage
-  // float current = readCurrent();  // Function to read current
-
+  void calculatePowerAndEnergy(float current, float voltage) {
   // Calculate power (in watts)
   power = voltage * current / 1000.0; // Divide by 1000 to convert mA to A
-
-  // Calculate energy (in kWh) over time
-  // if (lastUpdateTime != 0) {
-  //   float timeElapsed = (currentTime - lastUpdateTime) / 3600000.0; // Convert ms to hours
-  //   energy += (power * timeElapsed) / 1000.0; // Add power consumption to energy in kWh
-  // }
-
-  // lastUpdateTime = currentTime;
 
   float K_power = (power / 1000.0);
   float units = K_power * 1;
   float per_unit_cost = (units * 12.67);
-
 
   // Send power and energy to Blynk
   Blynk.virtualWrite(V5, power);  // Send power to Virtual Pin V5
@@ -89,8 +79,22 @@ void calculatePowerAndEnergy(float current, float voltage) {
   Serial.print(per_unit_cost);
   Serial.println(" TK");
   
-}
+  display.print("Power: ");
+  display.print(power);
+  display.println(" W");
 
+  display.print("Energy: ");
+  display.print(units);
+  display.println(" kWh");
+
+  display.print("Cost: ");
+  display.print(per_unit_cost);  // Display cost in TK
+  display.println(" TK");
+
+  display.display();  // Update the display with the new data
+
+
+}
 
 // Function to control relay (connected to Virtual Pin V4)
 BLYNK_WRITE(V4) {
@@ -125,7 +129,7 @@ float readCurrent()
   float mA = (abs(average / 100.0) - calibration_factor);
 
   // Handle noise below a threshold
-  if (mA <= 35) mA = 0;
+  if (mA <= 70) mA = 0;
 
   return mA;  // Return the measured current
 }
@@ -151,6 +155,15 @@ void setup()
   // Configure relay pin as output
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW); // Ensure relay is OFF initially
+
+ // Initialize the OLED display
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // 0x3C is the I2C address of the OLED
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);  // Don't proceed, loop forever
+  }
+
+  display.display();  
+  delay(2000);  // Pause for 2 seconds
 
   // Connect to WiFi and Blynk
   Serial.println("Connecting to WiFi...");
@@ -187,21 +200,50 @@ void loop()
   // Read voltage using ZMPT101B
   float rmsVoltage = readVoltage();
 
+  Serial.print("Voltage : ");
+  Serial.print(rmsVoltage);
+  Serial.println(" V");
+
+  Serial.print("Current : ");
+  Serial.print(current);
+  Serial.println(" mA");
+
+
   // Send data to Blynk
   Blynk.virtualWrite(V0, rmsVoltage);  // Send voltage to Virtual Pin V0
   Blynk.virtualWrite(V1, current);     // Send current to Virtual Pin V1
 
-  // Display the results in the serial monitor
-  Serial.print("Measured AC Current: ");
-  Serial.print(current);
-  Serial.println(" mA");
+  // Display the results on the OLED
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("Voltage: ");
+  display.print(rmsVoltage);
+  display.println(" V");
 
-  Serial.print("Measured AC Voltage (RMS): ");
-  Serial.print(rmsVoltage);
-  Serial.println(" V");
+  display.print("Current: ");
+  display.print(current);
+  display.println(" mA");
 
-  calculatePowerAndEnergy(current,rmsVoltage);
+  // display.print("Power: ");
+  // display.print(power);
+  // display.println(" W");
+
+  calculatePowerAndEnergy(current, rmsVoltage);
+
+  // display.print("Energy: ");
+  // display.print(energy);
+  // display.println(" kWh");
+
+  // display.print("Cost: ");
+  // display.print(energy * 12.67);  // Display cost in TK
+  // display.println(" TK");
+
+  // display.display();  // Update the display with the new data
+
+  // Call the power and energy calculation function
 
   // Add a delay for stability
-  // delay(1000);
+  delay(1000);
 }
