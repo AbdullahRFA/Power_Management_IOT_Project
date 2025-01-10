@@ -137,6 +137,7 @@ float readCurrent()
   return mA;  // Return the measured current
 }
 
+
 // Function to read voltage using ZMPT101B
 float readVoltage() {
   float average_voltage = 0.0;
@@ -145,9 +146,13 @@ float readVoltage() {
     average_voltage += voltageSensor.getRmsVoltage();
   }
 
+  // Calculate the average voltage 
   average_voltage = (average_voltage / 100.0);
+
+  // Handle noise below a threshold
   if (average_voltage <= 10) average_voltage = 0;
-  return average_voltage;
+  
+  return average_voltage;// Return the measured voltage
 }
 
 void setup()
