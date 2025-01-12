@@ -151,7 +151,7 @@ float readVoltage() {
 
   // Handle noise below a threshold
   if (average_voltage <= 10) average_voltage = 0;
-  
+
   return average_voltage;// Return the measured voltage
 }
 
@@ -162,7 +162,7 @@ void setup()
 
   // Configure relay pin as output
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW); // Ensure relay is OFF initially
+  digitalWrite(RELAY_PIN, HIGH); // Ensure relay is OFF initially
 
  // Initialize the OLED display
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // 0x3C is the I2C address of the OLED
